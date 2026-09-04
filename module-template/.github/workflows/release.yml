@@ -96,7 +96,7 @@ jobs:
           $bin  = "${{ steps.cargo.outputs.bin }}"
           $ver  = "${{ steps.meta.outputs.version }}"
           $src  = "target/${{ matrix.target }}/release/${bin}.exe"
-          $name = "${bin}-${ver}-${{ matrix.platform }}.exe"
+          $name = "${bin}-${{ matrix.platform }}-${ver}.exe"
           Copy-Item $src $name
           $hash = (Get-FileHash $name -Algorithm SHA256).Hash.ToLower()
           "$hash  $name" | Set-Content "$name.sha256"
@@ -111,11 +111,13 @@ jobs:
           BIN="${{ steps.cargo.outputs.bin }}"
           VER="${{ steps.meta.outputs.version }}"
           SRC="target/${{ matrix.target }}/release/${BIN}"
-          NAME="${BIN}-${VER}-${{ matrix.platform }}"
+          NAME="${BIN}-${{ matrix.platform }}-${VER}"
           cp "$SRC" "$NAME"
-          shasum -a 256 "$NAME" | awk '{print $1}' > /tmp/sha256.txt
-          # Linux 用 sha256sum，macOS 用 shasum -a 256，输出格式兼容
-          HASH=$(cat /tmp/sha256.txt)
+          if command -v sha256sum > /dev/null 2>&1; then
+            HASH=$(sha256sum "$NAME" | awk '{print $1}')
+          else
+            HASH=$(shasum -a 256 "$NAME" | awk '{print $1}')
+          fi
           echo "$HASH  $NAME" > "$NAME.sha256"
           echo "artifact=$NAME" >> "$GITHUB_OUTPUT"
           echo "sha256=$HASH"   >> "$GITHUB_OUTPUT"
@@ -123,7 +125,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: bin-${{ matrix.platform }}
+          name: ${{ steps.cargo.outputs.bin }}-${{ matrix.platform }}-${{ steps.meta.outputs.version }}
           path: |
             ${{ steps.prep_win.outputs.artifact || steps.prep_unix.outputs.artifact }}
             ${{ steps.prep_win.outputs.artifact || steps.prep_unix.outputs.artifact }}.sha256
@@ -192,7 +194,7 @@ jobs:
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: bin-*
+          pattern: ${{ steps.cargo.outputs.bin }}-*
           path: artifacts/
           merge-multiple: true
 
@@ -232,11 +234,11 @@ jobs:
           SHA_MAC_ARM: ${{ steps.sha.outputs.mac_arm }}
         run: |
           BASE="https://github.com/${REPO}/releases/download/${TAG}"
-          WIN_FILE="${MOD_ID}-${VERSION}-windows-x86_64.exe"
-          LNX_FILE="${MOD_ID}-${VERSION}-linux-x86_64"
-          ARM_FILE="${MOD_ID}-${VERSION}-linux-aarch64"
-          MAC_FILE="${MOD_ID}-${VERSION}-darwin-x86_64"
-          MAC_ARM_FILE="${MOD_ID}-${VERSION}-darwin-aarch64"
+          WIN_FILE="${MOD_ID-windows-x86_64.exe}-${VERSION}"
+          LNX_FILE="${MOD_ID}-linux-x86_64-${VERSION}"
+          ARM_FILE="${MOD_ID}-linux-aarch64-${VERSION}"
+          MAC_FILE="${MOD_ID}-darwin-x86_64-${VERSION}"
+          MAC_ARM_FILE="${MOD_ID}-darwin-aarch64-${VERSION}"
 
           DESC=$(jq -r '.description // ""' registry.json)
           TAGS=$(jq    '.tags        // []' registry.json)
