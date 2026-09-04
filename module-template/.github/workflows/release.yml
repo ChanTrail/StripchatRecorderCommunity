@@ -234,7 +234,7 @@ jobs:
           SHA_MAC_ARM: ${{ steps.sha.outputs.mac_arm }}
         run: |
           BASE="https://github.com/${REPO}/releases/download/${TAG}"
-          WIN_FILE="${MOD_ID-windows-x86_64.exe}-${VERSION}"
+          WIN_FILE="${MOD_ID}-windows-x86_64-${VERSION}.exe"
           LNX_FILE="${MOD_ID}-linux-x86_64-${VERSION}"
           ARM_FILE="${MOD_ID}-linux-aarch64-${VERSION}"
           MAC_FILE="${MOD_ID}-darwin-x86_64-${VERSION}"
