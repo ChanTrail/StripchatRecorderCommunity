@@ -1,0 +1,103 @@
+name: CI
+
+# push 到 main 分支或向 main 开 PR 时触发
+# Triggered on pushes to main and PRs targeting main
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "registry.json"   # registry.json 由 release workflow 维护，CI 忽略其变更
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "registry.json"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ── 代码检查 / Code check ──────────────────────────────────────────────────
+  check:
+    name: Check & Lint
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: cargo check
+        run: cargo check
+
+      - name: cargo clippy
+        run: cargo clippy -- -D warnings
+
+      - name: cargo test
+        run: cargo test
+
+  # ── 自动推 tag / Auto-tag ──────────────────────────────────────────────────
+  #
+  # 仅在 push 到 main 且所有检查通过后运行。
+  # 从 Cargo.toml 读取版本号，若对应 tag 尚不存在则创建并推送，
+  # 从而自动触发 release.yml 工作流。
+  #
+  # 注意：必须在仓库 Settings → Secrets 中添加名为 RELEASE_PAT 的 Personal
+  # Access Token（需要 repo 权限），使用默认 GITHUB_TOKEN 推送的 tag 不会触发
+  # 其他 workflow（GitHub 的安全限制）。
+  #
+  # Only runs on push to main after all checks pass.
+  # Reads the version from Cargo.toml; if the corresponding tag doesn't exist yet,
+  # creates and pushes it, which in turn triggers the release.yml workflow.
+  #
+  # Note: you must add a Personal Access Token with `repo` scope as a repository
+  # secret named RELEASE_PAT. Tags pushed with the default GITHUB_TOKEN do not
+  # trigger other workflows (GitHub security restriction).
+  auto-tag:
+    name: Auto-tag release
+    runs-on: ubuntu-22.04
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_PAT }}
+
+      # 从 Cargo.toml 读取版本号 / Read version from Cargo.toml
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$VERSION"       >> "$GITHUB_OUTPUT"
+          echo "tag=v${VERSION}"        >> "$GITHUB_OUTPUT"
+
+      # 若 tag 已存在则跳过，避免重复发布 / Skip if tag already exists
+      - name: Check if tag exists
+        id: tag_check
+        run: |
+          if git ls-remote --tags origin "${{ steps.version.outputs.tag }}" | grep -q .; then
+            echo "exists=true"  >> "$GITHUB_OUTPUT"
+            echo "Tag ${{ steps.version.outputs.tag }} already exists, skipping."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # 用 PAT 推送 tag，使下游 release.yml 能被触发
+      # Push tag with PAT so the downstream release.yml can be triggered
+      - name: Create and push tag
+        if: steps.tag_check.outputs.exists == 'false'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"
