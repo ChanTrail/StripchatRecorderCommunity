@@ -4,12 +4,12 @@ name: CI
 # Triggered on pushes to main and PRs targeting main
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths-ignore:
       - "**.md"
       - "registry.json"   # registry.json 由 release workflow 维护，CI 忽略其变更
   pull_request:
-    branches: [main]
+    branches: [master]
     paths-ignore:
       - "**.md"
       - "registry.json"
@@ -64,7 +64,7 @@ jobs:
     name: Auto-tag release
     runs-on: ubuntu-22.04
     needs: check
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
 
     steps:
       - name: Checkout

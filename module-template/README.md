@@ -75,7 +75,7 @@ Add a `RELEASE_PAT` secret under **Settings → Secrets → Actions**:
 # 1. 确保上述三处改动已提交 / Commit the three changes above
 git add Cargo.toml src/main.rs registry.json
 git commit -m "feat: initial module implementation"
-git push origin main
+git push origin master
 # CI 自动推 tag → 触发 Release workflow → 生成完整 registry.json → 创建 GitHub Release
 # CI auto-pushes tag → triggers Release workflow → generates registry.json → creates GitHub Release
 ```
@@ -98,7 +98,7 @@ Just bump `version` in `Cargo.toml` and push — everything else is automatic:
 # 修改 Cargo.toml 中的 version 后 / After bumping version in Cargo.toml
 git add Cargo.toml
 git commit -m "chore: bump version to 1.1.0"
-git push origin main
+git push origin master
 ```
 
 CI 自动完成：check/clippy/test → 推 tag → 多平台编译 → 写回 `registry.json` → 创建 GitHub Release。  

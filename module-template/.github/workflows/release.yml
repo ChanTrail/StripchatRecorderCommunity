@@ -141,7 +141,7 @@ jobs:
       - name: Checkout main
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: master
           token: ${{ secrets.RELEASE_PAT }}
 
       - name: Install jq
@@ -266,7 +266,7 @@ jobs:
           git diff --cached --quiet \
             && echo "registry.json unchanged, skipping commit" \
             || git commit -m "chore: update registry.json for ${{ github.ref_name }}"
-          git push origin main
+          git push origin master
 
       # 创建 GitHub Release / Create GitHub Release
       - name: Create GitHub Release
