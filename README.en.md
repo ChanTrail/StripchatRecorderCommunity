@@ -29,7 +29,7 @@ Central index registry.json        Module maintainer's registry.json
 ## Submitting a new module (one-time)
 
 1. **Create your own module repo** using the template in [`module-template/`](./module-template/).
-2. **Add a `RELEASE_PAT` secret** (Settings → Secrets → Actions) — a Personal Access Token with `repo` scope, required for auto-pushing tags and committing `registry.json`.
+2. **Add a `RELEASE_PAT` secret**: GitHub avatar → Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token (classic), check **repo** scope and generate, copy the token; then go to the module repo Settings → Secrets → Actions → New repository secret, set Name to `RELEASE_PAT` and paste the token into Secret.
 3. **Only three things to change**:
    - `Cargo.toml`: change `name` (module ID) and `version`
    - `src/main.rs`: implement processing logic, update param definitions in `DESCRIBE`

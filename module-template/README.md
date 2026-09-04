@@ -61,13 +61,21 @@ echo '{"inputs":["/path/to/test.mp4"],"params":{"my_param":"test"},"exe_dir":"/t
 
 ### 首次配置 / First-time setup
 
-在仓库 **Settings → Secrets → Actions** 中添加 `RELEASE_PAT` secret：
-- 类型：Personal Access Token，需要 `repo` 权限
-- 用途：CI 推送 tag 和将生成的 `registry.json` commit 回仓库
+为仓库添加 `RELEASE_PAT` secret：
 
-Add a `RELEASE_PAT` secret under **Settings → Secrets → Actions**:
-- Type: Personal Access Token with `repo` scope
-- Purpose: CI uses it to push tags and commit the generated `registry.json` back to the repo
+1. GitHub 头像 → **Settings** → **Developer settings** → **Personal access tokens** → **Tokens (classic)**
+2. 点 **Generate new token (classic)**，勾选 **repo** 权限，点 **Generate token**
+3. 复制生成的 token（`ghp_xxx...`，只显示一次）
+4. 进入模块仓库 → **Settings → Secrets → Actions** → **New repository secret**
+5. **Name** 填 `RELEASE_PAT`，**Secret** 粘贴 token，点 **Add secret**
+
+Add a `RELEASE_PAT` secret to the repo:
+
+1. GitHub avatar → **Settings** → **Developer settings** → **Personal access tokens** → **Tokens (classic)**
+2. Click **Generate new token (classic)**, check **repo** scope, click **Generate token**
+3. Copy the token (`ghp_xxx...`) — shown only once
+4. Go to the module repo → **Settings → Secrets → Actions** → **New repository secret**
+5. Set **Name** to `RELEASE_PAT`, paste the token into **Secret**, click **Add secret**
 
 ### 首次发布 / First release
 

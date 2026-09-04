@@ -29,7 +29,7 @@
 ## 如何提交新模块（一次性操作）
 
 1. **创建你自己的模块仓库**，使用 [`module-template/`](./module-template/) 目录中的模板。
-2. **添加 `RELEASE_PAT` secret**（Settings → Secrets → Actions）：Personal Access Token，需要 `repo` 权限，用于自动推 tag 和 commit `registry.json`。
+2. **添加 `RELEASE_PAT` secret**：GitHub 头像 → Settings → Developer settings → Personal access tokens → Tokens (classic) → Generate new token (classic)，勾选 **repo** 权限后生成，复制 token；再到模块仓库 Settings → Secrets → Actions → New repository secret，Name 填 `RELEASE_PAT`，Secret 粘贴 token。
 3. **只需修改三处**：
    - `Cargo.toml`：改 `name`（模块 ID）和 `version`
    - `src/main.rs`：实现处理逻辑，修改 `DESCRIBE` 中的参数定义

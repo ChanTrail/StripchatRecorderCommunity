@@ -1,7 +1,7 @@
 name: CI
 
-# push 到 main 分支或向 main 开 PR 时触发
-# Triggered on pushes to main and PRs targeting main
+# push 到 master 分支或向 master 开 PR 时触发
+# Triggered on pushes to master and PRs targeting master
 on:
   push:
     branches: [master]
@@ -18,10 +18,14 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # ── 代码检查 / Code check ──────────────────────────────────────────────────
+  # ── 三平台代码检查 / Cross-platform check ─────────────────────────────────
   check:
-    name: Check & Lint
-    runs-on: ubuntu-22.04
+    name: Check & Lint (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-latest, macos-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -33,6 +37,8 @@ jobs:
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.os }}
 
       - name: cargo check
         run: cargo check
@@ -45,24 +51,31 @@ jobs:
 
   # ── 自动推 tag / Auto-tag ──────────────────────────────────────────────────
   #
-  # 仅在 push 到 main 且所有检查通过后运行。
+  # 仅在 push 到 master 且三平台检查全部通过后运行。
   # 从 Cargo.toml 读取版本号，若对应 tag 尚不存在则创建并推送，
   # 从而自动触发 release.yml 工作流。
   #
-  # 注意：必须在仓库 Settings → Secrets 中添加名为 RELEASE_PAT 的 Personal
-  # Access Token（需要 repo 权限），使用默认 GITHUB_TOKEN 推送的 tag 不会触发
-  # 其他 workflow（GitHub 的安全限制）。
+  # 注意：需要先生成一个 Personal Access Token 并配置为仓库 secret：
+  # GitHub 头像 → Settings → Developer settings → Personal access tokens → Tokens (classic)
+  # → Generate new token (classic)，勾选 repo 权限后生成，复制 token（ghp_xxx...，只显示一次）；
+  # 再到本仓库 Settings → Secrets → Actions → New repository secret，
+  # Name 填 RELEASE_PAT，Secret 粘贴 token，点 Add secret。
+  # 使用默认 GITHUB_TOKEN 推送的 tag 不会触发其他 workflow（GitHub 的安全限制）。
   #
-  # Only runs on push to main after all checks pass.
+  # Only runs on push to master after all three platform checks pass.
   # Reads the version from Cargo.toml; if the corresponding tag doesn't exist yet,
   # creates and pushes it, which in turn triggers the release.yml workflow.
   #
-  # Note: you must add a Personal Access Token with `repo` scope as a repository
-  # secret named RELEASE_PAT. Tags pushed with the default GITHUB_TOKEN do not
-  # trigger other workflows (GitHub security restriction).
+  # Note: generate a Personal Access Token and add it as a repository secret first:
+  # GitHub avatar → Settings → Developer settings → Personal access tokens → Tokens (classic)
+  # → Generate new token (classic), check repo scope, generate and copy the token (ghp_xxx...,
+  # shown only once); then go to this repo's Settings → Secrets → Actions → New repository secret,
+  # set Name to RELEASE_PAT and paste the token into Secret, click Add secret.
+  # Tags pushed with the default GITHUB_TOKEN do not trigger other workflows (GitHub security restriction).
   auto-tag:
     name: Auto-tag release
     runs-on: ubuntu-22.04
+    # needs 所有三个平台的 check 都通过 / needs all three platform checks to pass
     needs: check
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
 
@@ -78,8 +91,8 @@ jobs:
         id: version
         run: |
           VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
-          echo "version=$VERSION"       >> "$GITHUB_OUTPUT"
-          echo "tag=v${VERSION}"        >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v${VERSION}"  >> "$GITHUB_OUTPUT"
 
       # 若 tag 已存在则跳过，避免重复发布 / Skip if tag already exists
       - name: Check if tag exists
