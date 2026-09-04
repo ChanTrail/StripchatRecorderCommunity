@@ -33,7 +33,7 @@
 3. **只需修改三处**：
    - `Cargo.toml`：改 `name`（模块 ID）和 `version`
    - `src/main.rs`：实现处理逻辑，修改 `DESCRIBE` 中的参数定义
-   - `registry.json`：填写 `description` 和 `tags`（**仅这两个字段**，其余全部由 Release workflow 自动生成）
+   - `registry.json`：填写 `description`、`tags` 和 `license`（**仅这三个字段**，其余全部由 Release workflow 自动生成）
 4. **向本仓库提一次 PR**，在 `registry.json` 末尾追加一行：
 
 ```json
