@@ -139,6 +139,7 @@ jobs:
   # - latestVersion ← Cargo.toml version（即 tag 去掉 "v" 前缀）
   # - description   ← registry.json 中由维护者填写的字段（保持不变）
   # - tags          ← registry.json 中由维护者填写的字段（保持不变）
+  # - license       ← registry.json 中由维护者填写的字段（保持不变）
   # - downloads     ← 由本 job 根据 tag 和平台名称构造
   # - sha256        ← 从 build job 上传的 .sha256 文件读取
   #
@@ -149,6 +150,7 @@ jobs:
   # - latestVersion ← Cargo.toml version (tag with "v" stripped)
   # - description   ← maintained by the module author in registry.json (preserved)
   # - tags          ← maintained by the module author in registry.json (preserved)
+  # - license       ← maintained by the module author in registry.json (preserved)
   # - downloads     ← constructed by this job from tag and platform names
   # - sha256        ← read from .sha256 files uploaded by the build job
   release:
@@ -217,8 +219,8 @@ jobs:
           echo "mac=$(read_sha darwin-x86_64)"   >> "$GITHUB_OUTPUT"
           echo "mac_arm=$(read_sha darwin-aarch64)" >> "$GITHUB_OUTPUT"
 
-      # 重写 registry.json：保留 description/tags，其余全部由本步骤生成
-      # Rewrite registry.json: preserve description/tags, generate everything else
+      # 重写 registry.json：保留 description/tags/license，其余全部由本步骤生成
+      # Rewrite registry.json: preserve description/tags/license, generate everything else
       - name: Update registry.json
         env:
           MOD_ID:   ${{ steps.cargo.outputs.bin }}
@@ -242,6 +244,7 @@ jobs:
 
           DESC=$(jq -r '.description // ""' registry.json)
           TAGS=$(jq    '.tags        // []' registry.json)
+          LICENSE=$(jq -r '.license  // ""' registry.json)
 
           jq -n \
             --arg  id          "$MOD_ID" \
@@ -249,6 +252,7 @@ jobs:
             --arg  desc        "$DESC" \
             --arg  author      "$AUTHOR" \
             --argjson tags     "$TAGS" \
+            --arg  license     "$LICENSE" \
             --arg  ver         "$VERSION" \
             --arg  win_url     "${BASE}/${WIN_FILE}" \
             --arg  lnx_url     "${BASE}/${LNX_FILE}" \
@@ -266,6 +270,7 @@ jobs:
               description:   $desc,
               author:        $author,
               tags:          $tags,
+              license:       $license,
               latestVersion: $ver,
               downloads: {
                 "windows-x86_64": $win_url,
