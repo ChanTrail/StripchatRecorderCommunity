@@ -72,6 +72,7 @@ const DESCRIBE: &str = r#"{
   "inputTypes": ["video_file"],
   "outputTypes": ["video_file"],
   "official": false,
+  "concurrency": 0,
   "params": [
     {
       "key": "my_param",
